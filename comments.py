@@ -97,6 +97,7 @@ def get_attachment_json_paths(json):
 # MAKE SURE TO YOUR ADD API KEY HERE !!!!
 api_key = ''
 comment_endpoint = "https://api.regulations.gov/v4/comments/USTR-2015-0010-0005"
+# comment_endpoint = "https://www.regulations.gov/comment/FDA-2016-D-2335-1566" this breaks the code
 response = requests.get(comment_endpoint + "?include=attachments&api_key=" + api_key)
 json_response = response.json()
 
