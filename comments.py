@@ -70,19 +70,21 @@ def get_attachment_json_paths(json):
     # contains list of paths for attachments
     attachments = []
 
-    # handles the case if "fileFormats" does not exist
-    if ("fileFormats" not in json["included"][0]["attributes"]):
-        print("This json is missing fileFormats")
-        return attachments
-
-    for attachment in json["included"][0]["attributes"]["fileFormats"]:
-        if ("fileUrl" not in attachment):
-            print("attachment download link does not exist for this attachment")
-            continue
-
-        attachment_name = attachment['fileUrl'].split("/")[-1]
-        attachment_id = item_id + "_" + attachment_name
-        attachments.append(f'data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_id}')
+    # We need an additional check before assuming "included" exists in the json
+    for attachment in json["included"]:
+        id = attachment.get("id")
+        attributes = attachment.get("attributes")
+        if (attributes.get("fileFormats") and attributes.get("fileFormats") != "null" and attributes.get("fileFormats") is not None):
+            file_format = attributes["fileFormats"][0]
+            if ("fileUrl" in file_format):
+                print(f"valid attachment for attachment ID: {id}")
+                attachment_name = attachment["attributes"]["fileFormats"][0]["fileUrl"].split("/")[-1]
+                attachment_id = item_id + "_" + attachment_name
+                attachments.append(f'data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_id}')
+            else:
+                print(f"fileUrl did not exist for attachment ID: {id}")
+        else:
+            print(f"fileFormats did not exist for attachment ID: {id}")
 
     return attachments
 
@@ -96,7 +98,8 @@ def get_attachment_json_paths(json):
 # MAKE SURE TO YOUR ADD API KEY HERE !!!!
 # MAKE SURE TO YOUR ADD API KEY HERE !!!!
 api_key = ''
-comment_endpoint = "https://api.regulations.gov/v4/comments/USTR-2015-0010-0005"
+# comment_endpoint = "https://api.regulations.gov/v4/comments/USTR-2015-0010-0002"
+comment_endpoint = "https://api.regulations.gov/v4/comments/FDA-2016-D-2335-1566"
 response = requests.get(comment_endpoint + "?include=attachments&api_key=" + api_key)
 json_response = response.json()
 
@@ -131,9 +134,15 @@ def download_attachments(json):
     '''
     # list of paths for attachmennts
     path_list = get_attachment_json_paths(json)
-    for i, attachment in enumerate(json['included'][0]['attributes']['fileFormats']):
-        url = attachment['fileUrl']
-        download_single_attachment(url, path_list[i])
+    counter = 0
+    # We need an additional check before assuming "included" exists in the json
+    for included in json["included"]:
+        attributes = included.get("attributes")
+        if (attributes.get("fileFormats") and attributes.get("fileFormats") != "null" and attributes.get("fileFormats") is not None):
+            for attachment in included['attributes']['fileFormats']:
+                url = attachment['fileUrl']
+                download_single_attachment(url, path_list[counter])
+                counter += 1 # re write this
 
 
 def download_single_attachment(url, path):
