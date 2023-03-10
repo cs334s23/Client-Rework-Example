@@ -70,19 +70,17 @@ def get_attachment_json_paths(json):
     # contains list of paths for attachments
     attachments = []
 
-    # We need an additional check before assuming "included" exists in the json
     for attachment in json["included"]:
         id = attachment.get("id")
         attributes = attachment.get("attributes")
         if (attributes.get("fileFormats") and attributes.get("fileFormats") != "null" and attributes.get("fileFormats") is not None):
-            file_format = attributes["fileFormats"][0]
-            if ("fileUrl" in file_format):
-                print(f"valid attachment for attachment ID: {id}")
-                attachment_name = attachment["attributes"]["fileFormats"][0]["fileUrl"].split("/")[-1]
-                attachment_id = item_id + "_" + attachment_name
-                attachments.append(f'data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_id}')
-            else:
-                print(f"fileUrl did not exist for attachment ID: {id}")
+            for file_format in attributes["fileFormats"]:
+                if ("fileUrl" in file_format):
+                    attachment_name = file_format["fileUrl"].split("/")[-1]
+                    attachment_id = item_id + "_" + attachment_name
+                    attachments.append(f'data/{agencyId}/{docket_id}/binary-{docket_id}/comments_attachments/{attachment_id}')
+                else:
+                    print(f"fileUrl did not exist for attachment ID: {id}")
         else:
             print(f"fileFormats did not exist for attachment ID: {id}")
 
@@ -99,7 +97,9 @@ def get_attachment_json_paths(json):
 # MAKE SURE TO YOUR ADD API KEY HERE !!!!
 api_key = ''
 # comment_endpoint = "https://api.regulations.gov/v4/comments/USTR-2015-0010-0002"
+# comment_endpoint = "https://api.regulations.gov/v4/comments/EPA-HQ-OA-2005-0003-0026"
 comment_endpoint = "https://api.regulations.gov/v4/comments/FDA-2016-D-2335-1566"
+# EPA-HQ-OA-2005-0003-0026
 response = requests.get(comment_endpoint + "?include=attachments&api_key=" + api_key)
 json_response = response.json()
 
